@@ -3,12 +3,13 @@ import streamlit as st
 import pandas as pd
 import requests
 import time
+from scipy.sparse import load_npz
 
 
 def fetch_poster(movie_id):
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=8265bd1679663a7ea12ac168da84d2e8&language=en-US"
 
-    for _ in range(3):  # retry 3 times
+    for _ in range(3):
         try:
             response = requests.get(url, timeout=5)
             response.raise_for_status()
@@ -27,7 +28,8 @@ def fetch_poster(movie_id):
 
 def recommend(movie):
     movie_index = new_df[new_df['title'] == movie].index[0]
-    distances = similarity[movie_index]
+    distances = similarity[movie_index].toarray().flatten()
+
     movies_list = sorted(
         list(enumerate(distances)), reverse=True, key=lambda x: x[1]
     )[1:6]
@@ -47,7 +49,9 @@ movies_dict = pickle.load(open('movie_dict.pkl', 'rb'))
 movies = pd.DataFrame(movies_dict)
 
 new_df = movies
-similarity = pickle.load(open('similarity.pkl', 'rb'))
+
+# LOAD similarity.npz instead of similarity.pkl
+similarity = load_npz("similarity.npz")
 
 st.title('Movie Recommendation System')
 
@@ -80,3 +84,4 @@ if st.button('Recommend'):
     with col5:
         st.text(names[4])
         st.image(posters[4])
+
